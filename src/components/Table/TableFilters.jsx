@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -14,6 +15,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 
 function TableFilters({ filterConfig, filterValues, onFilterChange }) {
+  const [searchInput, setSearchInput] = useState(filterValues.search || "");
+
   // * Handle search input change
   const handleSearchChange = (event) => {
     onFilterChange("search", event.target.value);
@@ -47,6 +50,20 @@ function TableFilters({ filterConfig, filterValues, onFilterChange }) {
     );
   };
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (searchInput !== filterValues.search) {
+        onFilterChange("search", searchInput);
+      }
+    }, 619); // ! 0.619 seconds
+  
+    return () => {
+      clearTimeout(handler); 
+    };
+  }, [searchInput]);
+  
+  
+
   return (
     <Box sx={{ mb: 3 }}>
       <Stack spacing={2}>
@@ -69,13 +86,14 @@ function TableFilters({ filterConfig, filterValues, onFilterChange }) {
           {/* Search Filter */}
           {filterConfig.searchEnabled && (
             <TextField
-              label={filterConfig.searchPlaceholder || "Search"}
-              variant="outlined"
-              size="small"
-              value={filterValues.search}
-              onChange={handleSearchChange}
-              sx={{ minWidth: 200, mb: 1 }}
-            />
+            label={filterConfig.searchPlaceholder || "Search"}
+            variant="outlined"
+            size="small"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{ minWidth: 200, mb: 1 }}
+          />
+          
           )}
 
           {/* Date Range Filter */}
