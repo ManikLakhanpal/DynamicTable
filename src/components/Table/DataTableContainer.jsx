@@ -6,32 +6,30 @@ import {
   TableFilters,
 } from "@/components/Table";
 
-// Helper function to parse URL search params
+// * URL search params
 const parseSearchParams = (searchParams) => {
-  return {
-    page: searchParams.get("page")
-      ? parseInt(searchParams.get("page"), 10)
-      : 0,
-    rowsPerPage: searchParams.get("rowsPerPage")
-      ? parseInt(searchParams.get("rowsPerPage"), 10)
-      : 10,
-    sortKey: searchParams.get("sortKey") || "",
-    sortDirection:
-      (searchParams.get("sortDirection") | "desc") || "asc",
-    search: searchParams.get("search") || "",
-    activeTab: searchParams.get("activeTab") || "",
-    startDate: searchParams.get("startDate")
-      ? new Date(searchParams.get("startDate"))
-      : null,
-    endDate: searchParams.get("endDate")
-      ? new Date(searchParams.get("endDate"))
-      : null,
-    dropdown: searchParams.get("dropdown") || "",
-    multiSelect: searchParams.get("multiSelect")
-      ? (searchParams.get("multiSelect")).split(",")
-      : [],
+    return {
+      page: searchParams.get("page") ? parseInt(searchParams.get("page"), 10) : 0,
+      rowsPerPage: searchParams.get("rowsPerPage")
+        ? parseInt(searchParams.get("rowsPerPage"), 10)
+        : 10,
+      sortKey: searchParams.get("sortKey") || "",
+      sortDirection: searchParams.get("sortDirection") || "asc",
+      search: searchParams.get("search") || "",
+      activeTab: searchParams.get("activeTab") || "",
+      // Handle date parsing
+      startDate: searchParams.get("startDate")
+        ? new Date(decodeURIComponent(searchParams.get("startDate")))
+        : null,
+      endDate: searchParams.get("endDate")
+        ? new Date(decodeURIComponent(searchParams.get("endDate")))
+        : null,
+      dropdown: searchParams.get("dropdown") || "",
+      multiSelect: searchParams.get("multiSelect")
+        ? searchParams.get("multiSelect").split(",")
+        : [],
+    };
   };
-};
 
 function DataTableContainer ({ 
     title, 
@@ -45,27 +43,26 @@ function DataTableContainer ({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Parse URL params or use defaults
   const parsedParams = parseSearchParams(searchParams);
 
-  // State for table data and loading
+  // * Table ki State
   const [data, setData] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // State for pagination
+  // * State for pagination
   const [page, setPage] = useState(parsedParams.page);
   const [rowsPerPage, setRowsPerPage] = useState(
     parsedParams.rowsPerPage || defaultRowsPerPage
   );
 
-  // State for sorting
+  // * State for sorting up down
   const [sortConfig, setSortConfig] = useState({
     key: parsedParams.sortKey || defaultSortConfig.key,
     direction: parsedParams.sortDirection || defaultSortConfig.direction,
   });
 
-  // State for filters
+  // * State for filters
   const [filterValues, setFilterValues] = useState({
     search: parsedParams.search || defaultFilterValues.search || "",
     activeTab:

@@ -1,9 +1,7 @@
 "use client";
-
 import { Suspense } from "react";
 import { DataTableContainer } from "@/components/Table";
-import { Chip, Rating, Box } from "@mui/material";
-import Image from "next/image";
+import { Avatar } from "@mui/material";
 
 // * Columns in table
 const columns = [
@@ -14,158 +12,127 @@ const columns = [
     sortable: true,
   },
   {
-    key: "thumbnail",
-    label: "Image",
+    key: "image",
+    label: "Avatar",
     align: "center",
     render: (value, row) => (
-      <Box
-        sx={{ width: 60, height: 60, position: "relative", margin: "0 auto" }}
-      >
-        <Image
-          src={value}
-          alt={row.title}
-          fill
-          style={{ objectFit: "contain" }}
-        />
-      </Box>
+      <Avatar src={value} alt={`${row.firstName} ${row.lastName}`} />
     ),
   },
   {
-    key: "title",
-    label: "Name",
+    key: "firstName",
+    label: "First Name",
     align: "left",
     sortable: true,
   },
   {
-    key: "brand",
-    label: "Brand",
+    key: "lastName",
+    label: "Last Name",
     align: "left",
     sortable: true,
   },
   {
-    key: "category",
-    label: "Category",
+    key: "birthDate",
+    label: "DOB",
     align: "left",
     sortable: true,
   },
   {
-    key: "price",
-    label: "Price",
+    key: "email",
+    label: "Email",
+    align: "left",
+    sortable: true,
+  },
+  {
+    key: "age",
+    label: "Age",
     align: "right",
     sortable: true,
-    render: (value) => `$${value.toFixed(2)}`,
   },
   {
-    key: "discountPercentage",
-    label: "Discount",
-    align: "right",
-    sortable: true,
-    render: (value) => `${value}%`,
-  },
-  {
-    key: "rating",
-    label: "Rating",
+    key: "gender",
+    label: "Gender",
     align: "center",
-    sortable: true,
-    render: (value) => (
-      <Rating value={value} precision={0.5} readOnly size="small" />
-    ),
-  },
-  {
-    key: "stock",
-    label: "Stock",
-    align: "right",
-    sortable: true,
-    render: (value) => (
-      <Chip
-        label={
-          value > 50 ? "In Stock" : value > 0 ? "Low Stock" : "Out of Stock"
-        }
-        color={value > 50 ? "success" : value > 0 ? "warning" : "error"}
-        size="small"
-      />
-    ),
   },
 ];
 
 // * Filters that we want
 const filterConfig = {
   searchEnabled: true,
-  searchPlaceholder: "Search products...",
-  tabsEnabled: true,
-  tabOptions: [
-    { value: "all", label: "All Products" },
-    { value: "inStock", label: "In Stock" },
-    { value: "lowStock", label: "Low Stock" },
-    { value: "outOfStock", label: "Out of Stock" },
-  ],
+  searchPlaceholder: 'Search users...',
+  dateRangeEnabled: true,
   dropdownEnabled: true,
-  dropdownLabel: "Category",
+  dropdownLabel: 'Gender',
   dropdownOptions: [
-    { value: "", label: "All Categories" },
-    { value: "beauty", label: "Beauty" },
-    { value: "fragrances", label: "Fragrances" },
-    { value: "groceries", label: "Groceries" },
-  ],
-  multiSelectEnabled: true,
-  multiSelectLabel: "Brands",
-  multiSelectOptions: [
-    { value: "Essence", label: "Essence" },
-    { value: "Glamour Beauty", label: "Glamour Beauty" },
-    { value: "Annibale Colombo", label: "Annibale Colombo" },
-    { value: "Dior", label: "Dior" },
+    { value: '', label: 'All' },
+    { value: 'male', label: 'Male' },
+    { value: 'female', label: 'Female' },
   ],
 };
 
 // * Function to fetch the data
-const fetchProducts = async (params) => {
+const fetchUsers = async (params) => {
   try {
     const {
-      activeTab,
-      search,
-      dropdown,
-      multiSelect,
-      sort,
-      order,
       page,
       limit,
+      search,
+      order,
+      dropdown,
+      sort,
+      startDate,
+      endDate,
     } = params;
 
     const baseUrl = search
-      ? `https://dummyjson.com/products/search?q=${search}&page=${page}`
-      : `https://dummyjson.com/products?limit=1000`; // fetch all
+      ? `https://dummyjson.com/users/search?q=${search}&page=${page}`
+      : `https://dummyjson.com/users?limit=1000`;
 
     const response = await fetch(baseUrl);
     const result = await response.json();
-    let filteredData = result.products || [];
 
-    // * Stock filtering
-    if (activeTab === "inStock") {
-      filteredData = filteredData.filter((p) => {
-        return p.stock > 50;
+    // * All users
+    let filteredData = result.users || []
+
+    // * DOB Filter
+    if (startDate && endDate) {
+      const startDateTime = new Date(startDate).getTime();
+      const endDateTime = new Date(endDate).getTime();
+      
+      filteredData = filteredData.filter((user) => {
+        const userBirthDate = new Date(user.birthDate).getTime();
+        return userBirthDate >= startDateTime && userBirthDate <= endDateTime;
       });
-    } else if (activeTab === "lowStock") {
-      filteredData = filteredData.filter((p) => {
-        return p.stock > 0 && p.stock <= 50;
+    } else if (startDate) {
+      const startDateTime = new Date(startDate).getTime();
+      filteredData = filteredData.filter((user) => {
+        const userBirthDate = new Date(user.birthDate).getTime();
+        return userBirthDate >= startDateTime;
       });
-    } else if (activeTab === "outOfStock") {
-      filteredData = filteredData.filter((p) => {
-        return p.stock === 0;
+    } else if (endDate) {
+      const endDateTime = new Date(endDate).getTime();
+      filteredData = filteredData.filter((user) => {
+        const userBirthDate = new Date(user.birthDate).getTime();
+        return userBirthDate <= endDateTime;
       });
     }
 
-    // * Category filter
+    // * Date ke Filters
+    if (startDate || endDate) {
+        filteredData = filteredData.filter((user) => {
+          const userDate = new Date(user.birthDate).getTime();
+          const startTime = startDate ? new Date(startDate).getTime() : -Infinity;
+          const endTime = endDate ? new Date(endDate).getTime() : Infinity;
+          return userDate >= startTime && userDate <= endTime;
+        });
+      }
+
+
+    // * Gender filter
     if (dropdown) {
-      filteredData = filteredData.filter((p) => {
-        return p.category.toLowerCase() === dropdown.toLowerCase();
-      });
-    }
-
-    // * Brand filter
-    if (multiSelect && multiSelect.length > 0) {
-      filteredData = filteredData.filter((p) => {
-        return multiSelect.includes(p.brand);
-      });
+      filteredData = filteredData.filter((user) =>
+        user.gender.toLowerCase() === dropdown.toLowerCase()
+      );
     }
 
     // * Sorting
@@ -187,25 +154,24 @@ const fetchProducts = async (params) => {
       totalCount: filteredData.length,
     };
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Error fetching users:", error);
     return { data: [], totalCount: 0 };
   }
 };
 
-export default function ProductsPage() {
+export default function UsersPage() {
   return (
     <Suspense>
       <DataTableContainer
-        title="Products Catalog"
+        title="Users Directory"
         columns={columns}
-        fetchData={fetchProducts}
+        fetchData={fetchUsers}
         filterConfig={filterConfig}
         defaultSortConfig={{ key: "id", direction: "asc" }}
         defaultRowsPerPage={10}
         defaultFilterValues={{
           activeTab: "all",
           dropdown: "",
-          multiSelect: [],
         }}
       />
     </Suspense>
