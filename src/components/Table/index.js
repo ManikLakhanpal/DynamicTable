@@ -4,3 +4,4 @@ export { default as TableFilters } from './TableFilters';
 export * from './TableFilters';
 export { default as DataTableContainer } from './DataTableContainer';
 export * from './DataTableContainer';
+export { default as ActiveFilters } from './ActiveFilters';

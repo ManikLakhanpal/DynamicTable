@@ -59,30 +59,22 @@ const columns = [
 // * Filters that we want
 const filterConfig = {
   searchEnabled: true,
-  searchPlaceholder: 'Search users...',
+  searchPlaceholder: "Search users...",
   dateRangeEnabled: true,
   dropdownEnabled: true,
-  dropdownLabel: 'Gender',
+  dropdownLabel: "Gender",
   dropdownOptions: [
-    { value: '', label: 'All' },
-    { value: 'male', label: 'Male' },
-    { value: 'female', label: 'Female' },
+    { value: "", label: "All" },
+    { value: "male", label: "Male" },
+    { value: "female", label: "Female" },
   ],
 };
 
 // * Function to fetch the data
 const fetchUsers = async (params) => {
   try {
-    const {
-      page,
-      limit,
-      search,
-      order,
-      dropdown,
-      sort,
-      startDate,
-      endDate,
-    } = params;
+    const { page, limit, search, order, dropdown, sort, startDate, endDate } =
+      params;
 
     const baseUrl = search
       ? `https://dummyjson.com/users/search?q=${search}&page=${page}`
@@ -92,13 +84,13 @@ const fetchUsers = async (params) => {
     const result = await response.json();
 
     // * All users
-    let filteredData = result.users || []
+    let filteredData = result.users || [];
 
     // * DOB Filter
     if (startDate && endDate) {
       const startDateTime = new Date(startDate).getTime();
       const endDateTime = new Date(endDate).getTime();
-      
+
       filteredData = filteredData.filter((user) => {
         const userBirthDate = new Date(user.birthDate).getTime();
         return userBirthDate >= startDateTime && userBirthDate <= endDateTime;
@@ -119,19 +111,18 @@ const fetchUsers = async (params) => {
 
     // * Date ke Filters
     if (startDate || endDate) {
-        filteredData = filteredData.filter((user) => {
-          const userDate = new Date(user.birthDate).getTime();
-          const startTime = startDate ? new Date(startDate).getTime() : -Infinity;
-          const endTime = endDate ? new Date(endDate).getTime() : Infinity;
-          return userDate >= startTime && userDate <= endTime;
-        });
-      }
-
+      filteredData = filteredData.filter((user) => {
+        const userDate = new Date(user.birthDate).getTime();
+        const startTime = startDate ? new Date(startDate).getTime() : -Infinity;
+        const endTime = endDate ? new Date(endDate).getTime() : Infinity;
+        return userDate >= startTime && userDate <= endTime;
+      });
+    }
 
     // * Gender filter
     if (dropdown) {
-      filteredData = filteredData.filter((user) =>
-        user.gender.toLowerCase() === dropdown.toLowerCase()
+      filteredData = filteredData.filter(
+        (user) => user.gender.toLowerCase() === dropdown.toLowerCase()
       );
     }
 

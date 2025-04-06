@@ -17,6 +17,10 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 function TableFilters({ filterConfig, filterValues, onFilterChange }) {
   const [searchInput, setSearchInput] = useState(filterValues.search || "");
 
+  useEffect(() => {
+    setSearchInput(filterValues.search || "");
+  }, [filterValues.search]);
+
   // * Handle search input change
   const handleSearchChange = (event) => {
     onFilterChange("search", event.target.value);
@@ -67,6 +71,7 @@ function TableFilters({ filterConfig, filterValues, onFilterChange }) {
   return (
     <Box sx={{ mb: 3 }}>
       <Stack spacing={2}>
+        
         {/* Tabs Filter */}
         {filterConfig.tabsEnabled && filterConfig.tabOptions && (
           <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
@@ -83,6 +88,7 @@ function TableFilters({ filterConfig, filterValues, onFilterChange }) {
         )}
 
         <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }}>
+          
           {/* Search Filter */}
           {filterConfig.searchEnabled && (
             <TextField
@@ -92,8 +98,7 @@ function TableFilters({ filterConfig, filterValues, onFilterChange }) {
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             sx={{ minWidth: 200, mb: 1 }}
-          />
-          
+          />          
           )}
 
           {/* Date Range Filter */}

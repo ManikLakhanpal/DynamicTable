@@ -1,33 +1,10 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Box, Container, Typography } from "@mui/material";
-import { DynamicTable, TableFilters } from "@/components/Table";
+import { Box, Container, Typography, Backdrop, CircularProgress } from "@mui/material";
+import { DynamicTable, TableFilters, ActiveFilters } from "@/components/Table";
+import parseSearchParams from "@/utils/parseSearchParams";
 
 // * URL search params
-const parseSearchParams = (searchParams) => {
-  return {
-    page: searchParams.get("page") ? parseInt(searchParams.get("page"), 10) : 0,
-    rowsPerPage: searchParams.get("rowsPerPage")
-      ? parseInt(searchParams.get("rowsPerPage"), 10)
-      : 10,
-    sortKey: searchParams.get("sortKey") || "",
-    sortDirection: searchParams.get("sortDirection") || "asc",
-    search: searchParams.get("search") || "",
-    activeTab: searchParams.get("activeTab") || "",
-    // Handle date parsing
-    startDate: searchParams.get("startDate")
-      ? new Date(decodeURIComponent(searchParams.get("startDate")))
-      : null,
-    endDate: searchParams.get("endDate")
-      ? new Date(decodeURIComponent(searchParams.get("endDate")))
-      : null,
-    dropdown: searchParams.get("dropdown") || "",
-    multiSelect: searchParams.get("multiSelect")
-      ? searchParams.get("multiSelect").split(",")
-      : [],
-  };
-};
-
 function DataTableContainer({
   title,
   columns,
@@ -65,8 +42,7 @@ function DataTableContainer({
     activeTab:
       parsedParams.activeTab ||
       defaultFilterValues.activeTab ||
-      filterConfig.tabOptions?.[0]?.value ||
-      "",
+      (filterConfig.tabOptions?.[0]?.value || ""),
     startDate: parsedParams.startDate || defaultFilterValues.startDate || null,
     endDate: parsedParams.endDate || defaultFilterValues.endDate || null,
     dropdown: parsedParams.dropdown || defaultFilterValues.dropdown || "",
@@ -90,7 +66,8 @@ function DataTableContainer({
 
     // ! Add filter params
     if (filterValues.search) params.set("search", filterValues.search);
-    if (filterValues.activeTab) params.set("activeTab", filterValues.activeTab);
+
+    params.set("activeTab", filterValues.activeTab);
 
     const isValidDate = (d) => d instanceof Date && !isNaN(d.getTime());
 
@@ -141,7 +118,7 @@ function DataTableContainer({
           sort: sortConfig.key,
           order: sortConfig.direction,
           search: filterValues.search,
-          tab: filterValues.activeTab,
+          activeTab: filterValues.activeTab,
           startDate: filterValues.startDate?.toISOString(),
           endDate: filterValues.endDate?.toISOString(),
           dropdown: filterValues.dropdown,
@@ -162,30 +139,117 @@ function DataTableContainer({
 
     fetchDataFromApi();
     updateUrl();
-  }, [page, rowsPerPage, sortConfig, filterValues]);
+  }, [page, rowsPerPage, sortConfig, filterValues, fetchData]);
 
-  useEffect(() => {
-    const fetchTableData = async () => {
-      setLoading(true);
-      const { data, totalCount } = await fetchData({
-        page,
-        limit: rowsPerPage,
-        sort: sortConfig.key,
-        order: sortConfig.direction,
-        ...filterValues,
+  // Generate active filters array for display
+  const getActiveFilters = () => {
+    const filters = [];
+    
+    if (filterValues.search) {
+      filters.push({
+        id: 'search',
+        type: 'search',
+        value: filterValues.search,
+        label: `Search: ${filterValues.search}`
       });
+    }
+    
+    if (filterValues.activeTab && filterValues.activeTab !== (filterConfig.tabOptions?.[0]?.value || '')) {
+      const tabLabel = filterConfig.tabOptions?.find(tab => tab.value === filterValues.activeTab)?.label;
+      filters.push({
+        id: 'tab',
+        type: 'activeTab',
+        value: filterValues.activeTab,
+        label: `Tab: ${tabLabel || filterValues.activeTab}`
+      });
+    }
+    
+    if (filterValues.startDate) {
+      filters.push({
+        id: 'startDate',
+        type: 'startDate',
+        value: filterValues.startDate,
+        label: `From: ${filterValues.startDate.toLocaleDateString()}`
+      });
+    }
+    
+    if (filterValues.endDate) {
+      filters.push({
+        id: 'endDate',
+        type: 'endDate',
+        value: filterValues.endDate,
+        label: `To: ${filterValues.endDate.toLocaleDateString()}`
+      });
+    }
+    
+    if (filterValues.dropdown) {
+      const dropdownLabel = filterConfig.dropdownOptions?.find(option => option.value === filterValues.dropdown)?.label;
+      filters.push({
+        id: 'dropdown',
+        type: 'dropdown',
+        value: filterValues.dropdown,
+        label: `${filterConfig.dropdownLabel || 'Filter'}: ${dropdownLabel || filterValues.dropdown}`
+      });
+    }
+    
+    if (filterValues.multiSelect && filterValues.multiSelect.length > 0) {
+      const selectedLabels = filterConfig.multiSelectOptions
+        ?.filter(option => filterValues.multiSelect.includes(option.value))
+        .map(option => option.label);
+      
+      filterValues.multiSelect.forEach((value, index) => {
+        filters.push({
+          id: `multiSelect-${value}`,
+          type: 'multiSelect',
+          value: value,
+          label: `${filterConfig.multiSelectLabel || 'Selected'}: ${selectedLabels?.[index] || value}`
+        });
+      });
+    }
+    
+    return filters;
+  };
 
-      setData(data);
-      setTotalCount(totalCount);
-      setLoading(false);
-    };
+  // * Handles removing a filter
+  const handleRemoveFilter = (filterType, filterValue) => {
+    if (filterType === 'multiSelect') {
 
-    fetchTableData();
-    updateUrl();
-  }, [page, rowsPerPage, sortConfig, filterValues]);
+      setFilterValues(prev => ({
+        ...prev,
+        multiSelect: prev.multiSelect.filter(value => value !== filterValue)
+      }));
+    } else {
+
+      const defaultValue = 
+        filterType === 'activeTab' ? (filterConfig.tabOptions?.[0]?.value || '') :
+        filterType === 'dropdown' ? '' :
+        filterType === 'search' ? '' : 
+        null;
+      
+      setFilterValues(prev => ({
+        ...prev,
+        [filterType]: defaultValue
+      }));
+    }
+    
+    setPage(0);
+  };
 
   return (
     <Suspense>
+      <Backdrop
+        sx={{ 
+          color: '#fff', 
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          flexDirection: 'column',
+          gap: 2
+        }}
+        open={loading}
+      >
+        <CircularProgress color="inherit" />
+        <Typography variant="h6" color="white">Loading data...</Typography>
+      </Backdrop>
+      
       <Container maxWidth="xl">
         <Box sx={{ my: 4 }}>
           <Typography variant="h4" component="h1" gutterBottom>
@@ -196,6 +260,11 @@ function DataTableContainer({
             filterConfig={filterConfig}
             filterValues={filterValues}
             onFilterChange={handleFilterChange}
+          />
+          
+          <ActiveFilters 
+            activeFilters={getActiveFilters()}
+            onRemoveFilter={handleRemoveFilter}
           />
 
           <DynamicTable

@@ -9,17 +9,18 @@ import {
   TableSortLabel,
   Paper,
   Box,
-  Typography
+  Typography,
+  Skeleton 
 } from '@mui/material';
 
-
 function DynamicTable({ columns, data, title, loading = false, pagination, sorting }) {
-  // Handle row click
+
+  // ? Handle row click, might use it for pop Ups??
   const handleRowClick = (row) => {
     console.log('Row clicked:', row);
   };
 
-  // Handle sort change
+  // * Handle sort change
   const handleSortChange = (key) => {
     if (sorting) {
       const isAsc = sorting.sortConfig.key === key && sorting.sortConfig.direction === 'asc';
@@ -30,14 +31,14 @@ function DynamicTable({ columns, data, title, loading = false, pagination, sorti
     }
   };
 
-  // Handle page change
+  // * Handle page change
   const handleChangePage = (_event, newPage) => {
     if (pagination) {
       pagination.onPageChange(newPage);
     }
   };
 
-  // Handle rows per page change
+  // * Handle rows per page change
   const handleChangeRowsPerPage = (event) => {
     if (pagination) {
       pagination.onRowsPerPageChange(parseInt(event.target.value, 10));
@@ -86,15 +87,23 @@ function DynamicTable({ columns, data, title, loading = false, pagination, sorti
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} align="center">
-                  Loading...
-                </TableCell>
-              </TableRow>
+              // * Loading skeleton rows
+              Array.from(new Array(pagination?.rowsPerPage || 5)).map((_, index) => (
+                <TableRow key={`skeleton-${index}`}>
+                  {columns.map((column, colIndex) => (
+                    <TableCell key={`skeleton-cell-${index}-${colIndex}`}>
+                      <Skeleton height={24} />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
             ) : data.length === 0 ? (
+              // * Empty state
               <TableRow>
-                <TableCell colSpan={columns.length} align="center">
-                  No data available
+                <TableCell colSpan={columns.length} sx={{ height: '400px', textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No data available
+                  </Typography>
                 </TableCell>
               </TableRow>
             ) : (

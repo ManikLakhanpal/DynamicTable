@@ -139,6 +139,8 @@ const fetchProducts = async (params) => {
     const result = await response.json();
     let filteredData = result.products || [];
 
+    console.log(`Current Active tab : ${activeTab}`)
+
     // * Stock filtering
     if (activeTab === "inStock") {
       filteredData = filteredData.filter((p) => {
