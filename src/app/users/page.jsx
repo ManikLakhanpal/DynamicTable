@@ -46,7 +46,13 @@ const columns = [
   {
     key: "age",
     label: "Age",
-    align: "right",
+    align: "left",
+    sortable: true,
+  },
+  {
+    key: "role",
+    label: "Role",
+    align: "left",
     sortable: true,
   },
   {
@@ -60,11 +66,18 @@ const columns = [
 const filterConfig = {
   searchEnabled: true,
   searchPlaceholder: "Search users...",
+  tabsEnabled: true,
+  tabOptions: [
+    { value: "all", label: "All" },
+    { value: "admin", label: "Admin" },
+    { value: "moderator", label: "Moderator" },
+    { value: "user", label: "user" },
+  ],
   dateRangeEnabled: true,
   dropdownEnabled: true,
   dropdownLabel: "Gender",
   dropdownOptions: [
-    { value: "", label: "All" },
+    { value: "all", label: "All" },
     { value: "male", label: "Male" },
     { value: "female", label: "Female" },
   ],
@@ -73,7 +86,7 @@ const filterConfig = {
 // * Function to fetch the data
 const fetchUsers = async (params) => {
   try {
-    const { page, limit, search, order, dropdown, sort, startDate, endDate } =
+    const { activeTab, page, limit, search, order, dropdown, sort, startDate, endDate } =
       params;
 
     const baseUrl = search
@@ -85,6 +98,21 @@ const fetchUsers = async (params) => {
 
     // * All users
     let filteredData = result.users || [];
+
+    // * User type filter
+    if (activeTab === "admin") {
+      filteredData = filteredData.filter((user) => {
+        return user.role == "admin";
+      });
+    } else if (activeTab === "moderator") {
+      filteredData = filteredData.filter((user) => {
+        return user.role == "moderator";
+      });
+    } else if (activeTab === "user") {
+      filteredData = filteredData.filter((user) => {
+        return user.role == "user";
+      });
+    }
 
     // * DOB Filter
     if (startDate && endDate) {
@@ -161,7 +189,6 @@ export default function UsersPage() {
         defaultSortConfig={{ key: "id", direction: "asc" }}
         defaultRowsPerPage={10}
         defaultFilterValues={{
-          activeTab: "all",
           dropdown: "",
         }}
       />
